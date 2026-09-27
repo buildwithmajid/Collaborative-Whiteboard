@@ -1,0 +1,17 @@
+{
+  "name": "collaborative-whiteboard",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w apps/server\" \"npm run dev -w apps/client\"",
+    "build": "npm run build -w packages/shared && npm run build -w apps/server && npm run build -w apps/client",
+    "docker:up": "docker-compose up -d",
+    "test": "npm run test -w apps/server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
