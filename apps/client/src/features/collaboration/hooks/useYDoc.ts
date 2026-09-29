@@ -9,7 +9,7 @@ export function useYDoc(roomId: string) {
 
   useEffect(() => {
     const wsProvider = new WebsocketProvider(
-      `ws://localhost:3001/room/${roomId}`,
+      'ws://localhost:3001/room',
       roomId,
       ydoc
     );

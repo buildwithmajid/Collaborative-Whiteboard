@@ -6,7 +6,7 @@ export type ToolMode = 'select' | 'rectangle' | 'circle';
 
 export interface CanvasState {
   objects: Map<string, WhiteboardObject>;
-  selectedId: string | null;
+  selectedIds: string[];
   toolMode: ToolMode;
 }
 

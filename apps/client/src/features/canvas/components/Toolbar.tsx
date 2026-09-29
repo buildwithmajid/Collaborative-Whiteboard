@@ -5,9 +5,20 @@ import './Toolbar.css';
 interface ToolbarProps {
   activeTool: ToolMode;
   onToolChange: (tool: ToolMode) => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
-const Toolbar: React.FC<ToolbarProps> = ({ activeTool, onToolChange }) => {
+const Toolbar: React.FC<ToolbarProps> = ({
+  activeTool,
+  onToolChange,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+}) => {
   return (
     <div className="toolbar">
       <button
@@ -30,6 +41,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ activeTool, onToolChange }) => {
         title="Draw circle"
       >
         ◯ Circle
+      </button>
+
+      <div className="toolbar-separator" />
+
+      <button
+        className="tool-button"
+        onClick={onUndo}
+        disabled={!canUndo}
+        title="Undo (Ctrl+Z)"
+      >
+        ↩ Undo
+      </button>
+      <button
+        className="tool-button"
+        onClick={onRedo}
+        disabled={!canRedo}
+        title="Redo (Ctrl+Y)"
+      >
+        ↪ Redo
       </button>
     </div>
   );

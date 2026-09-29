@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import * as Y from 'yjs';
 import type { WhiteboardObject, ShapeType } from '@whiteboard/shared';
 
-export function useCanvasObjects(ydoc: Y.Doc) {
+export function useCanvasObjects(ydoc: Y.Doc, localOrigin?: string) {
   const [objects, setObjects] = useState<Map<string, WhiteboardObject>>(new Map());
 
   useEffect(() => {
@@ -38,25 +38,59 @@ export function useCanvasObjects(ydoc: Y.Doc) {
       loadObjects();
     };
 
-    yObjects.observe(observer);
+    yObjects.observeDeep(observer);
 
     return () => {
-      yObjects.unobserve(observer);
+      yObjects.unobserveDeep(observer);
     };
   }, [ydoc]);
 
-  const updateObject = (id: string, obj: WhiteboardObject) => {
-    const yObjects = ydoc.getMap('objects');
-    const yMap = new Y.Map();
-    Object.entries(obj).forEach(([key, value]) => {
-      yMap.set(key, value);
-    });
-    yObjects.set(id, yMap);
-  };
+  const addObject = useCallback((obj: WhiteboardObject) => {
+    const yObjects = ydoc.getMap<Y.Map<unknown>>('objects');
+    ydoc.transact(() => {
+      const yMap = new Y.Map<unknown>();
+      Object.entries(obj).forEach(([key, value]) => {
+        if (value !== undefined) {
+          yMap.set(key, value);
+        }
+      });
+      yObjects.set(obj.id, yMap);
+    }, localOrigin ?? null);
+  }, [ydoc, localOrigin]);
 
-  const addObject = (obj: WhiteboardObject) => {
-    updateObject(obj.id, obj);
-  };
+  const updateObject = useCallback((id: string, changes: Partial<WhiteboardObject>) => {
+    const yObjects = ydoc.getMap<Y.Map<unknown>>('objects');
+    ydoc.transact(() => {
+      const existingMap = yObjects.get(id);
 
-  return { objects, addObject, updateObject };
+      if (existingMap) {
+        // Only update fields that changed — preserves CRDT granular merge
+        Object.entries(changes).forEach(([key, value]) => {
+          if (value !== undefined) {
+            existingMap.set(key, value);
+          }
+        });
+      } else {
+        // Object doesn't exist yet — create new Y.Map with all fields
+        const yMap = new Y.Map<unknown>();
+        Object.entries(changes).forEach(([key, value]) => {
+          if (value !== undefined) {
+            yMap.set(key, value);
+          }
+        });
+        yObjects.set(id, yMap);
+      }
+    }, localOrigin ?? null);
+  }, [ydoc, localOrigin]);
+
+  const deleteObjects = useCallback((ids: string[]) => {
+    const yObjects = ydoc.getMap<Y.Map<unknown>>('objects');
+    ydoc.transact(() => {
+      ids.forEach((id) => {
+        yObjects.delete(id);
+      });
+    }, localOrigin ?? null);
+  }, [ydoc, localOrigin]);
+
+  return { objects, addObject, updateObject, deleteObjects };
 }

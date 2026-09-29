@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CanvasStage from '../../canvas/components/CanvasStage';
 import Toolbar from '../../canvas/components/Toolbar';
@@ -7,6 +7,7 @@ import PresenceAvatars from '../../collaboration/components/PresenceAvatars';
 import type { ToolMode } from '../../canvas/types';
 import { useYDoc } from '../../collaboration/hooks/useYDoc';
 import { useCanvasObjects } from '../../canvas/hooks/useCanvasObjects';
+import { useUndoRedo } from '../../canvas/hooks/useUndoRedo';
 import { useAwareness } from '../../collaboration/hooks/useAwareness';
 import { generateRandomUser, generateUserId } from '../../collaboration/utils/userGenerator';
 
@@ -23,15 +24,24 @@ function WhiteboardRoom() {
       .catch(() => setError('Room tidak ditemukan'));
   }, [roomId]);
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [toolMode, setToolMode] = useState<ToolMode>('select');
   
   const userId = useMemo(() => generateUserId(), []);
   const localUser = useMemo(() => generateRandomUser(), []);
   
   const { ydoc, provider, synced } = useYDoc(roomId || '');
-  const { objects, addObject, updateObject } = useCanvasObjects(ydoc);
+  const { undo, redo, canUndo, canRedo, localOrigin } = useUndoRedo(ydoc);
+  const { objects, addObject, updateObject, deleteObjects } = useCanvasObjects(ydoc, localOrigin);
   const { remoteCursors, onlineUsers, setLocalCursor, clearLocalCursor } = useAwareness(provider, localUser);
+
+  const handleSelectionChange = useCallback((ids: string[]) => {
+    setSelectedIds(ids);
+  }, []);
+
+  const handleDeleteObjects = useCallback((ids: string[]) => {
+    deleteObjects(ids);
+  }, [deleteObjects]);
 
   if (error) {
     return (
@@ -49,10 +59,17 @@ function WhiteboardRoom() {
 
   return (
     <>
-      <Toolbar activeTool={toolMode} onToolChange={setToolMode} />
+      <Toolbar
+        activeTool={toolMode}
+        onToolChange={setToolMode}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+      />
       <button 
         onClick={shareLink}
-        style={{ position: 'fixed', top: 20, left: 240, zIndex: 100, padding: '8px 16px', background: 'white', border: '2px solid #ddd', borderRadius: 4, cursor: 'pointer' }}
+        style={{ position: 'fixed', top: 20, left: 520, zIndex: 100, padding: '8px 16px', background: 'white', border: '2px solid #ddd', borderRadius: 4, cursor: 'pointer' }}
       >
         Share
       </button>
@@ -66,8 +83,9 @@ function WhiteboardRoom() {
         objects={objects}
         onAddObject={addObject}
         onUpdateObject={updateObject}
-        selectedId={selectedId}
-        onSelectionChange={setSelectedId}
+        onDeleteObjects={handleDeleteObjects}
+        selectedIds={selectedIds}
+        onSelectionChange={handleSelectionChange}
         toolMode={toolMode}
         userId={userId}
         onMouseMove={setLocalCursor}

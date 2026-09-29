@@ -5,6 +5,7 @@
   display: flex;
   gap: 10px;
   z-index: 100;
+  align-items: center;
 }
 
 .tool-button {
@@ -18,7 +19,7 @@
   transition: all 0.2s;
 }
 
-.tool-button:hover {
+.tool-button:hover:not(:disabled) {
   border-color: #999;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -27,4 +28,16 @@
   background-color: #3b82f6;
   color: white;
   border-color: #1e40af;
+}
+
+.tool-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 24px;
+  background-color: #ddd;
+  margin: 0 4px;
 }
