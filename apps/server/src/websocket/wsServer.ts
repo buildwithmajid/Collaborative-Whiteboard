@@ -1,14 +1,14 @@
 import { WebSocketServer } from 'ws';
-// @ts-ignore - y-websocket v1.5 doesn't ship types for bin/utils
 import { setupWSConnection } from 'y-websocket/bin/utils';
 import type { Server } from 'http';
-import { getDoc } from './docManager';
+import { setupPersistence } from './docManager';
 import { getRoomById } from '../modules/room/room.service';
 
 export function setupWebSocketServer(server: Server) {
+  setupPersistence();
   const wss = new WebSocketServer({ noServer: true });
 
-  wss.on('connection', async (conn, req) => {
+  wss.on('connection', (conn, req) => {
     const url = req.url || '';
     const match = url.match(/^\/room\/([^?]+)/);
 
@@ -18,7 +18,8 @@ export function setupWebSocketServer(server: Server) {
     }
 
     const roomId = match[1];
-    await getDoc(roomId);
+    // Register y-websocket's handlers synchronously so the client's first sync message isn't dropped.
+    // The snapshot is restored by the persistence layer (see docManager.ts).
     setupWSConnection(conn, req, { docName: roomId, gc: true });
   });
 

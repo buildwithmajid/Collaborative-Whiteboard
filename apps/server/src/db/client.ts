@@ -1,7 +1,8 @@
 import { Pool } from 'pg';
+import { env } from '../config/env';
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/whiteboard_dev',
+  connectionString: env.DATABASE_URL,
 });
 
 export async function query(text: string, params?: unknown[]) {

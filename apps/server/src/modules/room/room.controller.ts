@@ -17,7 +17,10 @@ export async function handleCreateRoom(req: Request, res: Response) {
 
 export async function handleGetRoom(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) {
+      return res.status(400).json({ error: 'Room ID required' });
+    }
     const room = await getRoomById(id);
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
