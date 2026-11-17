@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createRoom } from '../api/roomApi';
 
 const RoomLobby: React.FC = () => {
   const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
 
-  const createRoom = async () => {
-    const res = await fetch('http://localhost:3001/api/rooms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name || 'Untitled' }),
-    });
-    const { roomId } = await res.json();
-    navigate(`/room/${roomId}`);
+  const handleCreateRoom = async () => {
+    setCreating(true);
+    setError(null);
+    try {
+      const roomId = await createRoom(name || 'Untitled');
+      navigate(`/room/${roomId}`);
+    } catch (err) {
+      console.error('Failed to create room:', err);
+      setError('Gagal membuat room. Pastikan server berjalan.');
+      setCreating(false);
+    }
   };
 
   return (
@@ -24,7 +30,10 @@ const RoomLobby: React.FC = () => {
         placeholder="Room name..."
         style={{ padding: 10, width: 200 }}
       />
-      <button onClick={createRoom} style={{ padding: 10, width: 200 }}>Buat Room Baru</button>
+      <button onClick={handleCreateRoom} disabled={creating} style={{ padding: 10, width: 200 }}>
+        {creating ? 'Membuat...' : 'Buat Room Baru'}
+      </button>
+      {error && <p style={{ color: '#b91c1c', margin: 0 }}>{error}</p>}
     </div>
   );
 };

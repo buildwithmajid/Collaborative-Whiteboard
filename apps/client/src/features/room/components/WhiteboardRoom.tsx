@@ -10,6 +10,7 @@ import { useCanvasObjects } from '../../canvas/hooks/useCanvasObjects';
 import { useUndoRedo } from '../../canvas/hooks/useUndoRedo';
 import { useAwareness } from '../../collaboration/hooks/useAwareness';
 import { generateRandomUser, generateUserId } from '../../collaboration/utils/userGenerator';
+import { getRoom } from '../api/roomApi';
 
 function WhiteboardRoom() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -17,11 +18,19 @@ function WhiteboardRoom() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`http://localhost:3001/api/rooms/${roomId}`)
-      .then((res) => {
-        if (!res.ok) setError('Room tidak ditemukan');
-      })
-      .catch(() => setError('Room tidak ditemukan'));
+    if (!roomId) return;
+    let cancelled = false;
+    const checkRoom = async () => {
+      try {
+        await getRoom(roomId);
+      } catch {
+        if (!cancelled) setError('Room tidak ditemukan');
+      }
+    };
+    void checkRoom();
+    return () => {
+      cancelled = true;
+    };
   }, [roomId]);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);

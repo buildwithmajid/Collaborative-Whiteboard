@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
+import { ROOM_WS_URL } from '../../../lib/websocketClient';
 
 export function useYDoc(roomId: string) {
   const ydoc = useMemo(() => new Y.Doc(), []);
@@ -8,11 +9,7 @@ export function useYDoc(roomId: string) {
   const [synced, setSynced] = useState(false);
 
   useEffect(() => {
-    const wsProvider = new WebsocketProvider(
-      'ws://localhost:3001/room',
-      roomId,
-      ydoc
-    );
+    const wsProvider = new WebsocketProvider(ROOM_WS_URL, roomId, ydoc);
 
     const handleStatus = (event: { status: string }) => {
       setSynced(event.status === 'connected');
